@@ -1,6 +1,7 @@
 from flask import Flask, redirect, url_for, session, render_template
 from authlib.integrations.flask_client import OAuth
 import os
+from authlib.jose import jwt as jose_jwt
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecret")
@@ -36,12 +37,28 @@ def login():
 def callback():
     token = keycloak.authorize_access_token()
     session["user"] = token["userinfo"]
+    session["access_token"] = token.get("access_token")
+    session["refresh_token"] = token.get("refresh_token")  # ← aggiungi
+    session["id_token"] = token.get("id_token")            # ← aggiungi
     return redirect("/")
 
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/")
+    keycloak_logout_url = (
+        f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/logout"
+        f"?post_logout_redirect_uri=http://localhost:5000"
+        f"&client_id={KEYCLOAK_CLIENT_ID}"
+    )
+    return redirect(keycloak_logout_url)
+
+@app.route("/tokens")
+def tokens():
+    return {
+        "access_token": session.get("access_token"),
+        "refresh_token": session.get("refresh_token"),
+        "id_token": session.get("id_token"),
+    }
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
