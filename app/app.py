@@ -1,3 +1,5 @@
+import requests
+
 from flask import Flask, redirect, url_for, session, render_template
 from authlib.integrations.flask_client import OAuth
 import os
@@ -59,6 +61,18 @@ def tokens():
         "refresh_token": session.get("refresh_token"),
         "id_token": session.get("id_token"),
     }
+
+@app.route("/protected")
+def protected():
+    access_token = session.get("access_token")
+    if not access_token:
+        return redirect("/login")
+
+    response = requests.get(
+        "http://localhost:5001/api/profile",
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    return response.json()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
