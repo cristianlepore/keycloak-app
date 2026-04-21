@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyApp - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="login-header">
+            <h1>🔐 MyApp</h1>
+            <p>Gestione Identità e Accessi</p>
+        </div>
+        <div class="login-body">
+            <h2>Accedi alla tua account</h2>
+            <a href="{{ url_for('login') }}" class="login-button">
+                Accedi con Keycloak
+            </a>
+        </div>
+    </div>
+</body>
+</html>

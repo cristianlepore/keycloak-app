@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: dev-file
+    ports:
+      - "8080:8080"
+    command: start-dev
+    networks:
+      - myapp-network
+
+  flask-app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_ENV: development
+      FLASK_APP: app.py
+    depends_on:
+      - keycloak
+    networks:
+      - myapp-network
+
+networks:
+  myapp-network:
+    driver: bridge

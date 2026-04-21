@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - MyApp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard">
+    <div class="navbar">
+        <h1>🔐 MyApp Dashboard</h1>
+        <div class="navbar-right">
+            <div class="user-info">
+                <div class="user-avatar">{{ user.preferred_username[0].upper() }}</div>
+                <span>{{ user.preferred_username }}</span>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <div class="welcome-card">
+            <h2>Benvenuto, {{ user.preferred_username }}! 👋</h2>
+            <p>Hai effettuato l'accesso con successo tramite Keycloak. Questa è la tua dashboard personale.</p>
+        </div>
+
+        <div class="user-details">
+            <h3>📋 Informazioni del tuo profilo</h3>
+            <div class="detail-row">
+                <div class="detail-label">Username:</div>
+                <div class="detail-value">{{ user.preferred_username }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Email:</div>
+                <div class="detail-value">{{ user.email }}</div>
+            </div>
+            {% if user.name %}
+            <div class="detail-row">
+                <div class="detail-label">Nome:</div>
+                <div class="detail-value">{{ user.name }}</div>
+            </div>
+            {% endif %}
+            {% if user.given_name %}
+            <div class="detail-row">
+                <div class="detail-label">Nome proprio:</div>
+                <div class="detail-value">{{ user.given_name }}</div>
+            </div>
+            {% endif %}
+            {% if user.family_name %}
+            <div class="detail-row">
+                <div class="detail-label">Cognome:</div>
+                <div class="detail-value">{{ user.family_name }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
