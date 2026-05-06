@@ -1,52 +1,78 @@
 # MyApp - Identity and Access Management
 
-A hands-on learning project to understand **OAuth2**, **OpenID Connect (OIDC)**, and **Identity Management** using Flask, Keycloak, and Authlib.
+A hands-on learning project to understand **OAuth2**, **OpenID Connect (OIDC)**, and **SAML 2.0** authentication using Flask, Keycloak, and modern authentication libraries.
 
 ---
 
 ## 📋 What This Project Does
 
-This project demonstrates the full OAuth2 + OIDC authentication flow with a real Identity Provider (Keycloak). It includes:
+This project demonstrates multiple authentication methods with real Identity Providers:
 
-- **Flask Client App** (`app.py`) — the OAuth2 client that authenticates users via Keycloak
-- **Flask Resource Server** (`api.py`) — a protected API that validates tokens before serving data
-- **Keycloak** — the Authorization Server and Identity Manager, running in Docker
+### OIDC Module (`oidc/`)
+- **Flask Client App** (`app.py`) — OAuth2/OIDC client that authenticates users via Keycloak
+- **Flask Resource Server** (`api.py`) — protected API endpoint that validates JWT Bearer tokens
+- Features:
+  - Login via OpenID Connect (Authorization Code Flow)
+  - JWT token inspection (access token, id token, refresh token)
+  - Self-registration support
+  - Secure token storage in encrypted session cookies
+  - Token refresh mechanism
+  - Protected API endpoints
 
-### Features
+### SAML Module (`saml/`)
+- **Flask SAML App** (`app.py`) — SAML 2.0 Service Provider (SP)
+- **SAML Configuration** (`saml-config/`) — SP metadata and settings
+- Features:
+  - SAML 2.0 authentication flow
+  - Configurable IdP integration
+  - Single Sign-On (SSO) and Single Logout (SLO) support
+  - User attribute mapping
 
-- Login via OpenID Connect (Authorization Code Flow)
-- JWT token inspection (access token, id token, refresh token)
-- Self-registration (users can register themselves via Keycloak)
-- Protected API endpoint that validates Bearer tokens
-- Logout that terminates both the Flask session and the Keycloak session
+### Shared Components
+- **Static Files** (`static/`) — CSS and frontend assets
+- **Templates** (`templates/`) — HTML pages served by both modules
 
 ---
 
 ## 🏗️ Architecture
 
+### OIDC Flow
 ```
 Browser
    │
    ▼
-app.py (Flask — OAuth2 Client)        ◄──── port 5000
+oidc/app.py (Flask — OAuth2 Client)        ◄──── port 5000
    │                  │
-   │ serves HTML      │ exchanges authorization code for token (server-to-server)
+   │ serves HTML      │ exchanges auth code for JWT (server-to-server)
    │                  │
    ▼                  ▼
-api.py (Resource Server)    Keycloak (Authorization Server)
-port 5001                   port 8080
-   │                              │
-   └── validates token ──────────►│
+oidc/api.py           Keycloak (Authorization Server)
+(port 5001)           (port 8080)
+   │
+   └── validates Bearer token
 ```
 
-### OAuth2 Roles
+### SAML Flow
+```
+Browser
+   │
+   ▼
+saml/app.py (Flask — SAML Service Provider)  ◄──── port 5002
+   │                  │
+   │ serves HTML      │ SAML 2.0 AuthnRequest/Response
+   │                  │
+   ▼                  ▼
+   ├─ static/         IdP (SAML Identity Provider)
+   └─ templates/      (e.g., Keycloak, Okta, Azure AD)
+```
 
-| Role | Who | What it does |
+### Component Overview
+| Component | Purpose | Port |
 |---|---|---|
-| Resource Owner | The user | Wants to access the app |
-| Client | `app.py` (Flask) | Requests authentication, holds the token |
-| Authorization Server | Keycloak | Verifies identity, issues JWT tokens |
-| Resource Server | `api.py` (Flask) | Serves protected data, validates tokens |
+| `oidc/app.py` | OIDC client, serves login page | 5000 |
+| `oidc/api.py` | Protected API with token validation | 5001 |
+| `saml/app.py` | SAML Service Provider | 5002 |
+| Keycloak | OAuth2/OIDC/SAML Authorization Server | 8080 |
 
 ---
 
@@ -74,19 +100,30 @@ The **token never passes through the browser** — it is exchanged directly betw
 
 ```
 myapp/
-├── app/
-│   ├── app.py              # Flask OAuth2 client — login, callback, dashboard, logout
-│   ├── api.py              # Flask Resource Server — protected API, validates tokens
-│   ├── requirements.txt    # Python dependencies
-│   ├── static/
-│   │   └── style.css       # CSS styles
-│   └── templates/
-│       ├── index.html      # Login page
-│       └── dashboard.html  # User dashboard
-├── docker-compose.yml      # Keycloak (runs in Docker)
-├── .venv/                  # Local Python environment (not committed)
-└── README.md               # This file
+├── oidc/                           # OpenID Connect (OAuth2) module
+│   ├── app.py                      # OIDC Client (Flask)
+│   └── api.py                      # Resource Server (protected API)
+├── saml/                           # SAML 2.0 module
+│   ├── app.py                      # SAML Service Provider (Flask)
+│   └── saml-config/
+│       ├── settings.json           # SAML SP configuration
+│       └── advanced_settings.json  # SAML security settings
+├── static/                         # Shared static files (CSS, JS, etc.)
+│   └── style.css
+├── templates/                      # Shared HTML templates
+│   ├── index.html                  # Login page
+│   └── dashboard.html              # User dashboard
+├── requirements.txt                # Unified dependencies
+├── docker-compose.yml              # Keycloak container setup
+├── .venv/                          # Python virtual environment
+└── README.md
 ```
+
+### Key Points
+- **oidc/** and **saml/** are independent modules running on different ports
+- **static/** and **templates/** are shared resources used by both modules
+- **requirements.txt** contains all dependencies for both modules
+- Each module can be run independently
 
 ---
 
@@ -95,7 +132,7 @@ myapp/
 ### Prerequisites
 
 - Docker and Docker Compose
-- Python 3.x
+- Python 3.8+
 
 ### Installation
 
@@ -108,41 +145,52 @@ cd myapp
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies
-python -m pip install -r requirements.txt
+# Install all dependencies (OIDC + SAML)
+pip install -r requirements.txt
 ```
 
-### Keycloak Setup (first time only)
+### Environment Variables
 
-1. Start Keycloak: `docker-compose up -d`
-2. Open http://localhost:8080 → Administration Console
-3. Login with `admin` / `admin`
-4. Create a Realm named `demo`
-5. Create a Client:
-   - Client ID: `flask-app`
-   - Client authentication: ON
-   - Valid redirect URIs: `http://localhost:5000/*`
-   - Web origins: `http://localhost:5000`
-6. Copy the **Client Secret** from the Credentials tab
-7. Create a User (Users → Create new user), set a password in the Credentials tab with Temporary: OFF
-8. Optionally enable self-registration: Realm Settings → Login → User registration: ON
+Create a `.env` file at the root:
+
+```bash
+# Keycloak Configuration
+KEYCLOAK_URL=http://localhost:8080
+KEYCLOAK_REALM=demo
+KEYCLOAK_CLIENT_ID=flask-app
+KEYCLOAK_CLIENT_SECRET=<your-client-secret>
+
+# Flask Security
+FLASK_SECRET_KEY=your-secret-key-here
+```
+
+Alternatively, export them before running the apps:
+
+```bash
+export KEYCLOAK_URL=http://localhost:8080
+export KEYCLOAK_REALM=demo
+export KEYCLOAK_CLIENT_ID=flask-app
+export KEYCLOAK_CLIENT_SECRET=<your-client-secret>
+export FLASK_SECRET_KEY=supersecret
+```
 
 ---
 
 ## 🔄 How to Start the App
 
-Flask runs **outside Docker**. Keycloak runs **inside Docker**.
+Flask modules run **outside Docker**. Keycloak runs **inside Docker**.
 
-### 1. Start Keycloak
+### Step 1: Start Keycloak
 
 ```bash
 docker-compose up -d
 docker-compose ps   # verify it's running
 ```
 
-### 2. Set environment variables
+### Step 2: Set Environment Variables
 
 ```bash
+source .venv/bin/activate
 export KEYCLOAK_URL=http://localhost:8080
 export KEYCLOAK_REALM=demo
 export KEYCLOAK_CLIENT_ID=flask-app
@@ -150,61 +198,98 @@ export KEYCLOAK_CLIENT_SECRET=<your-secret-from-keycloak>
 export FLASK_SECRET_KEY=supersecret
 ```
 
-> Tip: put these in a `.env` file and use `python-dotenv` to load them automatically.
+> Tip: Add these to `.env` file in the project root and `python-dotenv` will load them automatically.
 
-### 3. Start the Flask client (app.py)
+### Step 3: Configure Keycloak (First Time Only)
+
+1. Open http://localhost:8080 → Administration Console
+2. Login with `admin` / `admin`
+3. Create a Realm: Click "Master" dropdown → "Create Realm" → Name: `demo`
+4. Create OIDC Client:
+   - Go to Clients → Create
+   - Client ID: `flask-app`
+   - Client authentication: **ON**
+   - Valid redirect URIs: `http://localhost:5000/callback`
+   - Web origins: `http://localhost:5000`
+   - Save and copy **Client Secret** from Credentials tab
+5. Create a Test User:
+   - Users → Create user
+   - Username: `testuser`
+   - Set password in Credentials tab (Temporary: OFF)
+6. Optional - Enable self-registration:
+   - Realm Settings → Login → User registration: **ON**
+
+### Step 4: Run OIDC Module (OAuth2/OIDC)
 
 ```bash
-source .venv/bin/activate
-cd app
-python app.py
+cd oidc
+python app.py           # starts port 5000
 ```
 
-### 4. Start the Resource Server (api.py)
-
-Open a second terminal:
+In another terminal:
 
 ```bash
-source .venv/bin/activate
-cd app
-python api.py
+cd oidc
+python api.py           # starts port 5001 (resource server)
 ```
 
-### 5. Stop everything
+### Step 5: Run SAML Module (Optional, Different Port)
+
+In another terminal:
 
 ```bash
-docker-compose down   # stop Keycloak
-deactivate            # deactivate virtualenv
+cd saml
+python app.py           # starts port 5002
+```
+
+> Note: SAML module requires additional IdP configuration in Keycloak (SAML realm and client setup)
+
+### Stop Everything
+
+```bash
+docker-compose down     # stop Keycloak
+deactivate             # deactivate virtualenv
 ```
 
 ---
 
 ## 🌐 Access
 
+### OIDC Module
 | Service | URL |
 |---|---|
-| Flask app | http://localhost:5000 |
+| Flask Client App | http://localhost:5000 |
 | Resource Server API | http://localhost:5001/api/profile |
-| Keycloak admin | http://localhost:8080 |
+| Token endpoint | http://localhost:5001/tokens |
 
-Keycloak credentials: `admin` / `admin`
+### SAML Module
+| Service | URL |
+|---|---|
+| Flask SAML App | http://localhost:5002 |
+
+### Keycloak Admin
+| Service | URL |
+|---|---|
+| Admin Console | http://localhost:8080 |
+| Credentials | `admin` / `admin` |
 
 ---
 
-## 🔍 Debug Routes
+## 🔍 OIDC Module - Debug Routes
 
-These routes are useful for learning and debugging:
+These routes are available on the OIDC client (`http://localhost:5000`):
 
 | Route | What it shows |
 |---|---|
-| `/token` | Decoded userinfo from the session |
-| `/accesstoken` | Raw access token (JWT string) |
-| `/tokens` | All three tokens: access, refresh, id |
-| `/protected` | Calls the Resource Server with the token |
+| `/` | Home page (login status) |
+| `/login` | Initiates OAuth2 login flow |
+| `/logout` | Clears session and logs out of Keycloak |
+| `/tokens` | Returns all three tokens (access, refresh, id) |
+| `/protected` | Calls the Resource Server API with the token |
 
 ---
 
-## 🧪 Token Structure
+## 🧪 OIDC Token Structure
 
 After login, Flask holds three tokens in the session:
 
@@ -214,7 +299,7 @@ After login, Flask holds three tokens in the session:
 | `refresh_token` | Gets a new access token without re-login | 30 minutes |
 | `id_token` | Contains user claims (name, email, sub) | 5 minutes |
 
-Paste any token at https://jwt.io to inspect its claims (`sub`, `iat`, `exp`, `iss`, etc.).
+**Inspect tokens** at https://jwt.io to decode claims (`sub`, `iat`, `exp`, `iss`, etc.)
 
 ---
 
@@ -226,25 +311,42 @@ Paste any token at https://jwt.io to inspect its claims (`sub`, `iat`, `exp`, `i
 rm -rf .venv
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r app/requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Update dependencies
 
 ```bash
 source .venv/bin/activate
-python -m pip install <package>
-pip freeze > app/requirements.txt
+pip install <package>
+pip freeze > requirements.txt
 ```
 
 ---
 
 ## 📦 Dependencies
 
-- `flask` — Web framework
-- `authlib` — OAuth2 and OpenID Connect client implementation
-- `requests` — HTTP client (used by the Resource Server to validate tokens)
-- `python-dotenv` — Load environment variables from `.env` file
+The `requirements.txt` includes all dependencies for both OIDC and SAML modules:
+
+### OIDC Module Dependencies
+- `Flask` — Web framework
+- `Authlib` — OAuth2 and OpenID Connect client
+- `requests` — HTTP client for API calls
+- `python-dotenv` — Environment variable management
+- `cryptography` — Token validation and signing
+- `python-jose` — JWT and JWS support
+
+### SAML Module Dependencies
+- `Flask` — Web framework
+- `python-3-saml` — SAML 2.0 implementation
+- `lxml` — XML processing
+- `python-dotenv` — Environment variable management
+- `pytz`, `isodate` — Date/time handling for SAML
+
+### Shared Dependencies
+- Core Flask and security libraries
+- Database support (SQLAlchemy, Flask-SQLAlchemy)
+- Encryption and cryptography libraries
 
 ---
 

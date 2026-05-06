@@ -1,0 +1,32 @@
+{
+  "security": {
+    "nameIdEncrypted": false,
+    "authnRequestsSigned": false,
+    "wantAssertionsSigned": false,
+    "wantResponseSigned": false,
+    "signMetadata": false,
+    "wantNameId": true,
+    "wantNameIdEncrypted": false,
+    "requestedAuthnContext": true,
+    "requestedAuthnContextComparison": "exact",
+    "wantAttributeStatement": true,
+    "encryptionAlgorithm": "http://www.w3.org/2001/04/xmlenc#aes256-cbc"
+  },
+  "contactPerson": {
+    "technical": {
+      "givenName": "Technical Admin",
+      "emailAddress": "tech@example.com"
+    },
+    "support": {
+      "givenName": "Support Team",
+      "emailAddress": "support@example.com"
+    }
+  },
+  "organization": {
+    "en": {
+      "name": "My Organization",
+      "displayname": "My Organization",
+      "url": "http://localhost:5002"
+    }
+  }
+}
