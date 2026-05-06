@@ -4,17 +4,21 @@ from flask import Flask, redirect, url_for, session, render_template
 from authlib.integrations.flask_client import OAuth
 import os
 from authlib.jose import jwt as jose_jwt
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecret")
 
 oauth = OAuth(app)
 
+load_dotenv()  # carica le variabili dal file .env
+
 # Configurazione Keycloak da variabili ambiente
-KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "http://localhost:8080")
-KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "demo")
-KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "myapp")
-KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET", "my-secret")
+KEYCLOAK_URL = os.getenv("KEYCLOAK_URL")
+KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM")
+KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
+KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
+FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY")
 
 keycloak = oauth.register(
     name="keycloak",
