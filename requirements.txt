@@ -16,8 +16,8 @@ rsa==4.9.1
 pyasn1==0.6.3
 
 # SAML
-python-3-saml==1.15.1
-lxml==5.0.0
+python3-saml==1.15.0
+lxml>=5.1,<6.0
 isodate==0.6.1
 pytz==2024.1
 
