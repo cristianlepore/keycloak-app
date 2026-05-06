@@ -1,4 +1,4 @@
-# MyApp - Identity and Access Management
+# IAM - Identity and Access Management
 
 A hands-on learning project to understand **OAuth2**, **OpenID Connect (OIDC)**, and **SAML 2.0** authentication using Flask, Keycloak, and modern authentication libraries.
 
@@ -99,7 +99,7 @@ The **token never passes through the browser** — it is exchanged directly betw
 ## 🗂️ Project Structure
 
 ```
-myapp/
+IAM/
 ├── oidc/                           # OpenID Connect (OAuth2) module
 │   ├── app.py                      # OIDC Client (Flask)
 │   └── api.py                      # Resource Server (protected API)
@@ -139,7 +139,7 @@ myapp/
 ```bash
 # Clone the repository
 git clone <repo-url>
-cd myapp
+cd IAM
 
 # Create and activate virtual environment
 python3 -m venv .venv

@@ -6,12 +6,12 @@ import os
 from authlib.jose import jwt as jose_jwt
 from dotenv import load_dotenv
 
+load_dotenv()  # carica le variabili dal file .env
+
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecret")
 
 oauth = OAuth(app)
-
-load_dotenv()  # carica le variabili dal file .env
 
 # Configurazione Keycloak da variabili ambiente
 KEYCLOAK_URL = os.getenv("KEYCLOAK_URL")
